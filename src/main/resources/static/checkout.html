@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Checkout - Retail</title>
+    <style>
+        body {
+            font-family: Inter, Arial, sans-serif;
+            background: #f4f6fb;
+            margin: 0;
+            padding: 32px;
+            color: #222;
+        }
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2b6ef6, #5cc1ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(43, 110, 246, 0.2);
+        }
+        h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+        p.subtitle {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        th {
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        .summary-line.total {
+            font-weight: bold;
+            font-size: 18px;
+            border-top: 1px dashed #ccc;
+            padding-top: 12px;
+            margin-top: 10px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        button {
+            background: #2b6ef6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #1f54c9;
+        }
+        .muted {
+            color: #666;
+            font-size: 13px;
+        }
+        .discount-list {
+            margin-top: 10px;
+            border-radius: 8px;
+            background: #f9f9ff;
+            padding: 10px;
+            border: 1px solid #ececff;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="header">
+        <div class="logo">CR</div>
+        <div>
+            <h1>Checkout Retail</h1>
+            <p class="subtitle">Resumen del carrito y cálculo de descuentos.</p>
+        </div>
+    </div>
+
+    <!-- Carrito fijo -->
+    <div class="card">
+        <h3>Carrito actual</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>SKU</th>
+                <th>Cantidad</th>
+            </tr>
+            </thead>
+            <tbody id="cart-body">
+            <!-- Productos se llenan automáticamente -->
+            </tbody>
+        </table>
+
+        <div style="margin-top: 15px;">
+            <label for="paymentMethod" class="muted">Medio de pago:</label>
+            <select id="paymentMethod">
+                <option value="DEBIT">Débito</option>
+                <option value="CREDIT">Crédito</option>
+                <option value="CASH">Efectivo</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <button id="checkoutBtn">Realizar checkout</button>
+        </div>
+
+        <p id="status" class="muted" style="margin-top: 10px;">Estado: esperando acción.</p>
+    </div>
+
+    <!-- Resultado -->
+    <div class="card">
+        <h3>Resultado del cálculo</h3>
+
+        <div class="summary-line">
+            <div>Subtotal:</div>
+            <div id="subtotal">--</div>
+        </div>
+
+        <div class="summary-line">
+            <div>Descuentos aplicados:</div>
+            <div id="discounts-count">--</div>
+        </div>
+
+        <div id="discount-list" class="discount-list">Ningún descuento aplicado todavía.</div>
+
+        <div class="summary-line total">
+            <div>Total:</div>
+            <div id="total">--</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Productos fijos del proyecto
+    const productosFijos = [
+        { sku: "p-001", quantity: 1 },
+        { sku: "p-010", quantity: 2 },
+        { sku: "p-003", quantity: 1 }
+    ];
+
+    const cartBody = document.getElementById("cart-body");
+    const paymentSelect = document.getElementById("paymentMethod");
+    const statusBox = document.getElementById("status");
+    const subtotalEl = document.getElementById("subtotal");
+    const discountsCountEl = document.getElementById("discounts-count");
+    const discountListEl = document.getElementById("discount-list");
+    const totalEl = document.getElementById("total");
+
+    // Mostrar los productos fijos en la tabla
+    function mostrarCarrito() {
+        cartBody.innerHTML = "";
+        productosFijos.forEach((p, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${i + 1}</td><td>${p.sku}</td><td>${p.quantity}</td>`;
+            cartBody.appendChild(tr);
+        });
+    }
+
+    // Formato de moneda CLP
+    function formatCLP(value) {
+        if (!value) return "--";
+        const n = typeof value === "string" ? parseFloat(value) : value;
+        return n.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
+    }
+
+    // Mostrar respuesta del backend
+    function mostrarRespuesta(data) {
+        subtotalEl.textContent = formatCLP(data.subtotal);
+        totalEl.textContent = formatCLP(data.total);
+
+        if (Array.isArray(data.discounts) && data.discounts.length > 0) {
+            discountsCountEl.textContent = data.discounts.length;
+            discountListEl.innerHTML = "";
+            data.discounts.forEach(d => {
+                const div = document.createElement("div");
+                div.textContent = `${d.description} — ${formatCLP(d.amount)}`;
+                discountListEl.appendChild(div);
+            });
+        } else {
+            discountsCountEl.textContent = "0";
+            discountListEl.innerHTML = "Ningún descuento aplicado.";
+        }
+    }
+
+    // Enviar al backend
+    async function realizarCheckout() {
+        statusBox.textContent = "Enviando carrito...";
+        const cart = {
+            cartId: "cart-1001",
+            items: productosFijos,
+            shippingAddress: { street: "Av. Falsa 123", city: "Ciudad", zoneId: "zone-1" },
+            paymentMethod: paymentSelect.value
+        };
+
+        try {
+            const resp = await fetch("/api/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(cart)
+            });
+
+            if (!resp.ok) {
+                statusBox.textContent = "Error: " + resp.status;
+                return;
+            }
+
+            const data = await resp.json();
+            statusBox.textContent = "Respuesta recibida correctamente.";
+            mostrarRespuesta(data);
+        } catch (err) {
+            console.error(err);
+            statusBox.textContent = "Error de conexión con el servidor.";
+        }
+    }
+
+    document.getElementById("checkoutBtn").addEventListener("click", realizarCheckout);
+    mostrarCarrito();
+</script>
+</body>
+</html>
