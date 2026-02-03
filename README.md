@@ -16,24 +16,26 @@ Permite enviar un carrito de productos al backend para calcular **subtotal, desc
 ---
 
 ##  Estructura del proyecto
+
+```text
 checkout-retail/
 ├── build.gradle
 ├── settings.gradle
 ├── src/
-│ ├── main/
-│ │ ├── java/com/example/checkoutretail/
-│ │ │ ├── CheckoutRetailApplication.java
-│ │ │ ├── controller/CheckoutController.java
-│ │ │ ├── model/ (clases Cart, Item, Discount, etc.)
-│ │ │ └── service/CheckoutService.java
-│ │ ├── resources/
-│ │ │ ├── application.properties
-│ │ │ └── static/
-│ │ │ └── checkout.html ← Frontend funcional
-│ └── test/ (tests opcionales)
+│   ├── main/
+│   │   ├── java/com/example/checkoutretail/
+│   │   │   ├── CheckoutRetailApplication.java
+│   │   │   ├── controller/
+│   │   │   │   └── CheckoutController.java
+│   │   │   ├── model/              # Clases Cart, Item, Discount, etc.
+│   │   │   └── service/
+│   │   │       └── CheckoutService.java
+│   │   ├── resources/
+│   │   │   ├── application.properties
+│   │   │   └── static/
+│   │   │       └── checkout.html   # Frontend funcional
+│   └── test/                       # Tests opcionales
 └── README.md
-
---
 
 ---
 
